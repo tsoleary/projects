@@ -1,0 +1,115 @@
+---
+title: "ADH batch processing"
+author: "TS O'Leary"
+output:
+  rmarkdown::html_document:
+    theme: lumen
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+# Set up chunk defaults
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Load packages
+require(tidyverse)
+require(broom)
+require(RColorBrewer)
+
+# Source required functions
+source(here::here("ADH/scripts/adh_batch_functions.R"))
+```
+
+# Reaction Velcocities
+
+```{r}
+# Read in data -----------------------------------------------------------------
+data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/adh-f"))
+data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/adh-s")) %>%
+  filter(str_detect(file, "deg"))
+data_vt <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/vt")) %>%
+  filter(str_detect(file, "deg"))
+data_chiapas <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/chiapas")) %>%
+  filter(str_detect(file, "deg") & !is.na(abs)) %>%
+  filter(!(temp_group == "23.5" & conc == 100))
+```
+
+## ADH-fast enzyme
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_f)
+```
+
+## ADH-slow enzyme
+
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_s)
+```
+
+## Vermont ADH enzyme
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_vt)
+```
+
+## Chiapas ADH enzyme
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_chiapas)
+```
+
+
+```{r}
+# Calculate reaction velocities at each [EtOH] and each Temp group -------------
+data_velo_f <- calc_velocity(data_f)
+data_velo_s <- calc_velocity(data_s)
+data_velo_vt <- calc_velocity(data_vt)
+data_velo_chiapas <- calc_velocity(data_chiapas)
+```
+
+# Fit Michaelis–Menten curves
+
+```{r}
+# Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
+data_Km_Vm_f <- calc_Km_Vm(data_velo_f)
+data_Km_Vm_s <- calc_Km_Vm(data_velo_s)
+data_Km_Vm_vt <- calc_Km_Vm(data_velo_vt)
+data_Km_Vm_chiapas <- calc_Km_Vm(data_velo_chiapas)
+```
+
+## ADH-fast enzyme
+```{r}
+plot_mm_curve(data_velo_f)
+```
+
+## ADH-slow enzyme
+
+```{r}
+plot_mm_curve(data_velo_s)
+```
+
+## Vermont ADH enzyme
+```{r}
+plot_mm_curve(data_velo_vt)
+```
+
+## Chiapas ADH enzyme
+```{r}
+plot_mm_curve(data_velo_chiapas)
+```
+
+# Plot K<sub>m</sub> values
+
+```{r}
+# Combine Km tibbles -----------------------------------------------------------
+df_km_plot <- bind_rows("fast" = data_Km_Vm_f, 
+                        "slow" = data_Km_Vm_s, 
+                        "vt" = data_Km_Vm_vt, 
+                        "chiapas" = data_Km_Vm_chiapas, 
+                        .id = "enzyme") %>%
+  mutate(enzyme = factor(enzyme, levels = c("vt", "chiapas", "fast", "slow"))) %>%
+  select(enzyme, temp_group, term, estimate, std.error) %>%
+  pivot_wider(names_from = term, 
+              values_from = c(estimate, std.error))
+
+# Plot all Km's on the same chart
+plot_km(df_km_plot)
+```
