@@ -46,7 +46,7 @@ data_velo_s <- calc_velocity(data_s)
 ## ADH-slow enzyme
 
 ```{r}
-plot_mm_curve(data_velo_s)
+plot_mm_curve(data_velo_s, legend_labels = "23.5°C")
 ```
 
 ```{r}
