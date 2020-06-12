@@ -135,7 +135,9 @@ plot_velo <- function(data) {
 require(tidyverse)
 
 plot_mm_curve <- function(data, 
-                          palette = c("skyblue", "blue", "purple", "red", "darkred")) {
+                          palette = c("skyblue", "blue", "purple", "red", "darkred"),
+                          legend_labels = c("18.5°C", "23.5°C", "28.5°C", 
+                                            "33.5°C", "38.5°C")) {
   
   ggplot(data, aes(x = conc, y = velocity, fill = temp_group)) +
     geom_point(pch = 21, size = 3, color = "grey50", alpha = 0.75) +
@@ -147,11 +149,7 @@ plot_mm_curve <- function(data,
                 show.legend = FALSE) +
     scale_fill_manual(name = "Temperature",
                       values = palette,
-                      labels = c("18.5°C", 
-                                 "23.5°C", 
-                                 "28.5°C", 
-                                 "33.5°C", 
-                                 "38.5°C")) +
+                      labels = legend_labels) +
     scale_color_manual(values = palette) + 
     labs(x = "Ethanol (mM)",
          y = expression("Reaction Velocity (Abs/sec)")) + 
