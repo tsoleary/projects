@@ -168,7 +168,7 @@ require(tidyverse)
 
 plot_km <- function(data, 
                     palette = brewer.pal(4, "Set2"),
-                    legend.labels = c( "VT-ECK 8", "Chiapas", "Fast", "Slow")) {
+                    legend_labels = c( "VT-ECK 8", "Chiapas", "Fast", "Slow")) {
   ggplot(data, aes(x = temp_group, y = estimate_Km, fill = enzyme)) +
     geom_errorbar(aes(ymin = estimate_Km - std.error_Km, 
                       ymax = estimate_Km + std.error_Km), 
@@ -179,7 +179,7 @@ plot_km <- function(data,
          y = expression("K"[m]*"  (mM EtOH)")) +
     scale_fill_manual(name = "ADH enzyme",
                       values = palette,
-                      labels = legend.labels) +
+                      labels = legend_labels) +
     theme_classic()
 } 
 # End function -----------------------------------------------------------------
