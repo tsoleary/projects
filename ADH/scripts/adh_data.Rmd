@@ -25,14 +25,18 @@ source(here::here("ADH/scripts/adh_batch_functions.R"))
 
 ```{r}
 # Read in data -----------------------------------------------------------------
-data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/adh-f"))
+data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/adh-f")) %>%
+  filter(time <= 30)
 data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/adh-s")) %>%
-  filter(str_detect(file, "deg"))
+  filter(str_detect(file, "deg")) %>%
+  filter(time <= 30)
 data_vt <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/vt")) %>%
-  filter(str_detect(file, "deg"))
+  filter(str_detect(file, "deg")) %>%
+  filter(time <= 30)
 data_chiapas <- read_bind_tidy_csv(dir = here::here("ADH/data/GT_data/chiapas")) %>%
   filter(str_detect(file, "deg") & !is.na(abs)) %>%
-  filter(!(temp_group == "23.5" & conc == 100))
+  filter(!(temp_group == "23.5" & conc == 100)) %>%
+  filter(time <= 30)
 ```
 
 ```{r}

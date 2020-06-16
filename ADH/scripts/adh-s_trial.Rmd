@@ -27,7 +27,8 @@ source(here::here("ADH/scripts/adh_batch_functions.R"))
 ```{r}
 # Read in data -----------------------------------------------------------------
 data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/trial")) %>%
-  filter(file == "adh-s_trial_2_061120.csv") 
+  filter(file == "adh-s_trial_2_061120.csv") %>%
+  filter(time <= 30)
 ```
 
 ## ADH-slow enzyme
