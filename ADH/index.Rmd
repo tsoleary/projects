@@ -11,6 +11,6 @@ output:
 
 - [GT's data](https://tsoleary.github.io/projects/ADH/scripts/adh_data.html)
 
-- [Trial day one](https://tsoleary.github.io/projects/ADH/scripts/adh-s_trial.html)
+- [TSO trial day one](https://tsoleary.github.io/projects/ADH/scripts/adh-s_trial.html)
 
 - [TSO data day two](https://tsoleary.github.io/projects/ADH/scripts/adh_data_tso.html)
