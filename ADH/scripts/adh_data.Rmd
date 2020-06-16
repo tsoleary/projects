@@ -135,6 +135,7 @@ df_km_plot %>%
            paste0(round(estimate_Km, 2), " (± ", 
                   round(std.error_Km, 2), ")")) %>%
   select(enzyme, temp_group, `Km (± SEM)`, r.squared) %>%
+  arrange(enzyme, temp_group) %>%
   kable() %>%
   kable_styling("striped") %>%
   scroll_box(width = "100%", height = "100%")
