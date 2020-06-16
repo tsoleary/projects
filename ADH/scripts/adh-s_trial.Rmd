@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 require(tidyverse)
 require(broom)
 require(RColorBrewer)
+require(kableExtra)
 
 # Source required functions
 source(here::here("ADH/scripts/adh_batch_functions.R"))
@@ -26,7 +27,7 @@ source(here::here("ADH/scripts/adh_batch_functions.R"))
 ```{r}
 # Read in data -----------------------------------------------------------------
 data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/trial")) %>%
-  filter(file == "adh-s_trial_2_061120.csv")
+  filter(file == "adh-s_trial_2_061120.csv") 
 ```
 
 ## ADH-slow enzyme
@@ -39,6 +40,11 @@ plot_velo(data_s)
 ```{r}
 # Calculate reaction velocities at each [EtOH] and each Temp group -------------
 data_velo_s <- calc_velocity(data_s)
+data_velo_s %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "100%")
 ```
 
 # Fit Michaelis–Menten curves
@@ -53,5 +59,5 @@ plot_mm_curve(data_velo_s, legend_labels = "23.5°C")
 # Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
 data_Km_Vm_s <- calc_Km_Vm(data_velo_s)
 data_Km_Vm_s %>% 
-  select(term, estimate, std.error)
+  select(term, estimate, std.error, r.squared)
 ```
