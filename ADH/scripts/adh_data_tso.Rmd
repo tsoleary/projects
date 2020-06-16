@@ -32,21 +32,26 @@ data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/adh-f"))
 
 ## ADH-slow enzyme
 
-```{r, fig.height = 7, fig.width = 10}
+```{r, fig.height = 4, fig.width = 10}
 plot_velo(data_s)
+data_velo_s <- calc_velocity(data_s)
+data_velo_s %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
 ```
 
 ## ADH-fast enzyme
 
-```{r, fig.height = 7, fig.width = 10}
+```{r, fig.height = 4, fig.width = 10}
 plot_velo(data_f)
-```
-
-
-```{r}
-# Calculate reaction velocities at each [EtOH] and each Temp group -------------
-data_velo_s <- calc_velocity(data_s)
 data_velo_f <- calc_velocity(data_f)
+data_velo_f %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
 ```
 
 # Fit Michaelis–Menten curves
@@ -60,8 +65,6 @@ plot_mm_curve(data_velo_s, legend_labels = c("18.5°C", "23.5°C"))
 ```{r}
 # Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
 data_Km_Vm_s <- calc_Km_Vm(data_velo_s)
-data_Km_Vm_s %>% 
-  select(term, estimate, std.error)
 ```
 
 ## ADH-fast enzyme
@@ -73,8 +76,6 @@ plot_mm_curve(data_velo_f, legend_labels = c("18.5°C", "23.5°C"))
 ```{r}
 # Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
 data_Km_Vm_f <- calc_Km_Vm(data_velo_f)
-data_Km_Vm_f %>% 
-  select(term, estimate, std.error)
 ```
 
 # Plot K<sub>m</sub> values
@@ -85,16 +86,16 @@ df_km_plot <- bind_rows("fast" = data_Km_Vm_f,
                         "slow" = data_Km_Vm_s, 
                         .id = "enzyme") %>%
   mutate(enzyme = factor(enzyme, levels = c("fast", "slow"))) %>%
-  select(enzyme, temp_group, term, estimate, std.error) %>%
+  select(enzyme, temp_group, term, estimate, std.error, r.squared) %>%
   pivot_wider(names_from = term, 
               values_from = c(estimate, std.error))
 
 df_km_plot %>%
-  select(enzyme, temp_group, contains("Km")) %>%
+  select(enzyme, temp_group, contains("Km"), r.squared) %>%
   mutate(`Km ± SEM`= 
            paste0(round(estimate_Km, 2), " (± ", 
                   round(std.error_Km, 2), ")")) %>%
-  select(enzyme, temp_group, `Km ± SEM`) %>%
+  select(enzyme, temp_group, `Km ± SEM`, r.squared) %>%
   kable() %>%
   kable_styling("striped") %>%
   scroll_box(width = "100%", height = "100%")
