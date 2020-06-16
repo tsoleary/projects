@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 require(tidyverse)
 require(broom)
 require(RColorBrewer)
+require(kableExtra)
 
 # Source required functions
 source(here::here("ADH/scripts/adh_batch_functions.R"))
