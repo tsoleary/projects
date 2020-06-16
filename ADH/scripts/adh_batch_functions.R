@@ -17,9 +17,9 @@ read_tidy_spec_csv <- function(file) {
   
   read_csv(file) %>%
     pivot_longer(-c("cycle", "time", "temp"), 
-                 names_to = "conc", 
+                 names_to = "conc_well", 
                  values_to = "abs") %>%
-    mutate(conc = as.numeric(str_replace_all(conc, "_.", ""))) %>%
+    mutate(conc = as.numeric(str_replace_all(conc_well, "_.", ""))) %>%
     mutate(file = file,
            temp_group = case_when(temp > 17.5 & temp < 19.5 ~ "18.5",
                                   temp > 22.5 & temp < 24.5 ~ "23.5",
@@ -66,16 +66,23 @@ require(broom)
 
 calc_velocity <- function(data) {
   data %>%
-    group_by(conc, temp_group) %>%
+    group_by(conc_well, temp_group) %>%
     nest() %>%
     mutate(
       fit = map(data, ~ lm(abs ~ time, data = .x)),
-      tidied = map(fit, tidy)
+      tidied = map(fit, tidy),
+      glanced = map(fit, glance)
     ) %>% 
     unnest(tidied) %>%
-    filter(term == "time" & conc != "0" & estimate > 0) %>%
-    select(temp_group, conc, estimate) %>%
-    rename(velocity = estimate)
+    unnest(glanced, .name_repair = "minimal") %>%
+    filter(term == "time") %>%
+    select(temp_group, conc_well, estimate, r.squared) %>%
+    rename(velocity = estimate) %>%
+    mutate(conc = as.numeric(str_replace_all(conc_well, "_.", ""))) %>%
+    filter(conc != 0) %>%
+    arrange(conc) # %>%
+    # group_by(temp_group, conc) %>%
+    # summarize(velocity = mean(velocity))
 } 
 # End function -----------------------------------------------------------------
 
@@ -100,7 +107,9 @@ calc_Km_Vm <- function(data) {
                 data = .x),
       tidied = map(fit, tidy)
     ) %>%
-    unnest(tidied)
+    unnest(tidied) %>%
+    mutate(r.squared = map(fit, Rsq)) %>%
+    unnest(r.squared)
 } 
 # End function -----------------------------------------------------------------
 
@@ -115,7 +124,7 @@ calc_Km_Vm <- function(data) {
 plot_velo <- function(data) {
   ggplot(data, aes(x = time, 
                    y = abs, 
-                   color = as.factor(conc))) +
+                   color = as.factor(conc_well))) +
     geom_smooth(method = "lm", se = FALSE) +
     facet_wrap(~ temp_group) +
     labs(x = "Time (s)", y = "Absorbance @ 340 nm") +
@@ -135,7 +144,8 @@ plot_velo <- function(data) {
 require(tidyverse)
 
 plot_mm_curve <- function(data, 
-                          palette = c("skyblue", "blue", "purple", "red", "darkred"),
+                          palette = c("skyblue", "blue", "purple", 
+                                      "red", "darkred"),
                           legend_labels = c("18.5°C", "23.5°C", "28.5°C", 
                                             "33.5°C", "38.5°C")) {
   
@@ -183,3 +193,55 @@ plot_km <- function(data,
     theme_classic()
 } 
 # End function -----------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------
+# Function: Rsq
+# Description: Function to calculate the multiple R-squared and the adjusted 
+#              R-squared from a fitted model via lm or aov, i.e., linear models. 
+#              For a model fitted via nls, nonlinear models, the pseudo 
+#              R-squared is returned. Rsq function from soilphysics package
+# Inputs: a fitted model via lm or aov or via nls, nonlinear models
+# Outputs: output_description
+
+Rsq <- function(model) {
+  if (!inherits(model, c("lm", "aov", "nls")))
+    stop ("'Rsq' is only applied to the classes: 'lm', 'aov' or 'nls'.")
+  if (inherits(model, c("glm", "manova", "maov", "mlm")))
+    stop("'Rsq' is not applied to an object of this class!")
+  
+  pred <- predict(model)
+  n <- length(pred)
+  res <- resid(model)
+  w <- weights(model)
+  if (is.null(w)) w <- rep(1, n)
+  rss <- sum(w * res ^ 2)
+  resp <- pred + res
+  center <- weighted.mean(resp, w)
+  if (inherits(model, c("lm", "aov"))) {
+    r.df <- model$df.residual
+    int.df <- attr(model$terms, "intercept")
+    if (int.df) {
+      mss <- sum(w * scale(pred, scale = FALSE)^2)
+    } else {
+      mss <- sum(w * scale(pred, center = FALSE,
+                           scale = FALSE)^2)
+    }
+    r.sq <- mss / (mss + rss)
+    adj.r.sq <- 1 - (1 - r.sq) * (n - int.df) / r.df
+    out <- list(R.squared = r.sq, adj.R.squared = adj.r.sq)
+  } else {
+    r.df <- summary(model)$df[2]
+    int.df <- 1
+    tss <- sum(w * (resp - center)^2)
+    r.sq <- 1 - rss/tss
+    adj.r.sq <- 1 - (1 - r.sq) * (n - int.df) / r.df
+    out <- list(pseudo.R.squared = r.sq,
+                adj.R.squared = adj.r.sq)
+  }
+  class(out) <- "Rsq"
+  return(out$pseudo.R.squared)
+}
+# End function -----------------------------------------------------------------
+
