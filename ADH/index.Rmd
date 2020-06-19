@@ -12,5 +12,10 @@ output:
 - [GT's data](https://tsoleary.github.io/projects/ADH/scripts/adh_data.html)
 
 - [TSO trial day one](https://tsoleary.github.io/projects/ADH/scripts/adh-s_trial.html)
+  - ADH-slow at 18.5°C.
 
-- [TSO data day two](https://tsoleary.github.io/projects/ADH/scripts/adh_data_tso.html)
+- [TSO data](https://tsoleary.github.io/projects/ADH/scripts/adh_data_tso.html)
+  - ADH-fast & ADH-slow at 18.5°C and 23.5°C.
+
+- [TSO data double enzyme concentration](https://tsoleary.github.io/projects/ADH/scripts/adh_trial_061720.html)
+  - Double the number of flies to 160 to try to increase reaction velocities overall. 
