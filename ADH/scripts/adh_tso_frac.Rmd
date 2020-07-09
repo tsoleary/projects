@@ -1,0 +1,106 @@
+---
+title: "ADH - Fractionation"
+author: "TS O'Leary"
+output:
+  rmarkdown::html_document:
+    theme: lumen
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include = FALSE}
+# Set up chunk defaults
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Load packages
+require(tidyverse)
+require(broom)
+require(RColorBrewer)
+require(kableExtra)
+
+# Source required functions
+source(here::here("ADH/scripts/adh_batch_functions.R"))
+```
+
+# Reaction Velocities
+
+```{r}
+# Read in data -----------------------------------------------------------------
+data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/adh-f")) %>%
+  filter(time <= 30)
+data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/adh-s")) %>%
+  filter(time <= 30)
+```
+
+```{r}
+# Calculate reaction velocities at each [EtOH] and each Temp group -------------
+data_velo_f <- calc_velocity(data_f)
+data_velo_s <- calc_velocity(data_s)
+```
+
+## ADH-fast enzyme
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_f)
+data_velo_f %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+## ADH-slow enzyme
+
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_s)
+data_velo_s %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+# Fit Michaelis–Menten curves
+
+```{r}
+# Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
+data_Km_Vm_f <- calc_Km_Vm(data_velo_f)
+data_Km_Vm_s <- calc_Km_Vm(data_velo_s)
+```
+
+## ADH-fast enzyme
+```{r}
+plot_mm_curve(data_velo_f)
+```
+
+## ADH-slow enzyme
+
+```{r}
+plot_mm_curve(data_velo_s)
+```
+
+# Plot K<sub>m</sub> values
+
+```{r}
+# Combine Km tibbles -----------------------------------------------------------
+df_km_plot <- bind_rows("fast" = data_Km_Vm_f, 
+                        "slow" = data_Km_Vm_s, 
+                        .id = "enzyme") %>%
+  mutate(enzyme = factor(enzyme, levels = c("fast", "slow"))) %>%
+  select(enzyme, temp_group, term, estimate, std.error, r.squared) %>%
+  pivot_wider(names_from = term, 
+              values_from = c(estimate, std.error))
+
+df_km_plot %>%
+  select(enzyme, temp_group, contains("Km"), r.squared) %>%
+  mutate(`Km (± SEM)`= 
+           paste0(round(estimate_Km, 2), " (± ", 
+                  round(std.error_Km, 2), ")")) %>%
+  select(enzyme, temp_group, `Km (± SEM)`, r.squared) %>%
+  arrange(enzyme, temp_group) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "100%")
+
+# Plot all Km's on the same chart
+plot_km(df_km_plot)
+```
