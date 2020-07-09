@@ -22,7 +22,7 @@ require(kableExtra)
 source(here::here("ADH/scripts/adh_batch_functions.R"))
 ```
 
-# Reaction Velcocities
+# Reaction Velocities
 
 ```{r}
 # Read in data -----------------------------------------------------------------
