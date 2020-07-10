@@ -20,22 +20,34 @@ require(kableExtra)
 
 # Source required functions
 source(here::here("ADH/scripts/adh_batch_functions.R"))
+# time included 
+t_final <- 30
 ```
 
 # Reaction Velocities
 
 ```{r}
 # Read in data -----------------------------------------------------------------
+
 data_f <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/adh-f")) %>%
-  filter(time <= 30)
+  filter(time <= t_final)
 data_s <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/adh-s")) %>%
-  filter(time <= 30)
+  filter(time <= t_final)
+data_vt8 <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/vt-8")) %>%
+  filter(time <= t_final)
+data_vt10 <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/vt-10")) %>%
+  filter(time <= t_final)
+data_chiapas <- read_bind_tidy_csv(dir = here::here("ADH/data/fractionation/chiapas")) %>%
+  filter(time <= t_final)
 ```
 
 ```{r}
 # Calculate reaction velocities at each [EtOH] and each Temp group -------------
 data_velo_f <- calc_velocity(data_f)
 data_velo_s <- calc_velocity(data_s)
+data_velo_vt8 <- calc_velocity(data_vt8)
+data_velo_vt10 <- calc_velocity(data_vt10)
+data_velo_chiapas <- calc_velocity(data_chiapas)
 ```
 
 ## ADH-fast enzyme
@@ -59,12 +71,45 @@ data_velo_s %>%
   scroll_box(width = "100%", height = "500px")
 ```
 
+## VT ECK 8
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_vt8)
+data_velo_vt8 %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+## VT ECK 10
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_vt10)
+data_velo_vt10 %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
+## Chiapas
+```{r, fig.height = 7, fig.width = 10}
+plot_velo(data_chiapas)
+data_velo_chiapas %>%
+  select(temp_group, conc, velocity, r.squared) %>%
+  kable() %>%
+  kable_styling("striped") %>%
+  scroll_box(width = "100%", height = "500px")
+```
+
 # Fit Michaelis–Menten curves
 
 ```{r}
 # Determine the Km and Vmax from the fit of the Michaelis–Menten curves --------
 data_Km_Vm_f <- calc_Km_Vm(data_velo_f)
 data_Km_Vm_s <- calc_Km_Vm(data_velo_s)
+data_Km_Vm_vt8 <- calc_Km_Vm(data_velo_vt8)
+data_Km_Vm_vt10 <- calc_Km_Vm(data_velo_vt10)
+data_Km_Vm_chiapas <- calc_Km_Vm(data_velo_chiapas)
 ```
 
 ## ADH-fast enzyme
@@ -73,9 +118,23 @@ plot_mm_curve(data_velo_f)
 ```
 
 ## ADH-slow enzyme
-
 ```{r}
 plot_mm_curve(data_velo_s)
+```
+
+## VT ECK 8
+```{r}
+plot_mm_curve(data_velo_vt8)
+```
+
+## VT ECK 10
+```{r}
+plot_mm_curve(data_velo_vt10)
+```
+
+## Chiapas
+```{r}
+plot_mm_curve(data_velo_chiapas)
 ```
 
 # Plot K<sub>m</sub> values
@@ -84,8 +143,11 @@ plot_mm_curve(data_velo_s)
 # Combine Km tibbles -----------------------------------------------------------
 df_km_plot <- bind_rows("fast" = data_Km_Vm_f, 
                         "slow" = data_Km_Vm_s, 
+                        "vt8" = data_Km_Vm_vt8, 
+                        "vt10" = data_Km_Vm_vt10,
+                        "chiapas" = data_Km_Vm_chiapas, 
                         .id = "enzyme") %>%
-  mutate(enzyme = factor(enzyme, levels = c("fast", "slow"))) %>%
+  mutate(enzyme = factor(enzyme, levels = c("fast", "slow", "vt8", "vt10", "chiapas"))) %>%
   select(enzyme, temp_group, term, estimate, std.error, r.squared) %>%
   pivot_wider(names_from = term, 
               values_from = c(estimate, std.error))
