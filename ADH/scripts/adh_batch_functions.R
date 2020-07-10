@@ -157,10 +157,10 @@ plot_mm_curve <- function(data,
                 se = FALSE,
                 aes(color = temp_group), 
                 show.legend = FALSE) +
-    scale_fill_manual(name = "Temperature",
-                      values = palette,
-                      labels = legend_labels) +
-    scale_color_manual(values = palette) + 
+    # scale_fill_manual(name = "Temperature",
+    #                   values = palette,
+    #                   labels = legend_labels) +
+    # scale_color_manual(values = palette) + 
     labs(x = "Ethanol (mM)",
          y = expression("Reaction Velocity (Abs/sec)")) + 
     theme_classic()
@@ -187,9 +187,9 @@ plot_km <- function(data,
     geom_point(pch = 21, position = position_dodge(0.5), size = 6) +
     labs(x = "Temperature (°C)",
          y = expression("K"[m]*"  (mM EtOH)")) +
-    scale_fill_manual(name = "ADH enzyme",
-                      values = palette,
-                      labels = legend_labels) +
+    # scale_fill_manual(name = "ADH enzyme",
+    #                   values = palette,
+    #                   labels = legend_labels) +
     theme_classic()
 } 
 # End function -----------------------------------------------------------------
