@@ -19,3 +19,8 @@ output:
 
 - [TSO data double enzyme concentration](https://tsoleary.github.io/projects/ADH/scripts/adh_trial_061720.html)
   - Double the number of flies to 160 to try to increase reaction velocities overall. 
+
+- [TSO fractionation](https://tsoleary.github.io/projects/ADH/scripts/adh_tso_frac.html)
+  - 240 flies homogenized in 3 mL followed by ammonium sulfate fractionation and reconstition of pellet in 1 mL.
+    - ADH-fast & ADH-slow were reconsituted in 1 mL and then desalted
+    - VT-8, VT-10, & Chiapas were reconsituted in ~ 260 uL, desalted, then brought to 1 mL
