@@ -7,20 +7,25 @@ output:
     highlight: github
 ---
 
-# ADH Results
+# Gretchen Thompson Results
 
 - [GT's data](https://tsoleary.github.io/projects/ADH/scripts/adh_data.html)
 
-- [TSO trial day one](https://tsoleary.github.io/projects/ADH/scripts/adh-s_trial.html)
-  - ADH-slow at 18.5°C.
+## TSO data
 
-- [TSO data](https://tsoleary.github.io/projects/ADH/scripts/adh_data_tso.html)
-  - ADH-fast & ADH-slow at 18.5°C and 23.5°C.
+- [Trial day one](https://tsoleary.github.io/projects/ADH/scripts/adh-s_trial.html)
+    - ADH-slow at 18.5°C.
+
+- [Preliminary data](https://tsoleary.github.io/projects/ADH/scripts/adh_data_tso.html)
+    - Using Gretchen's method
+    - ADH-fast & ADH-slow at 18.5°C and 23.5°C.
 
 - [TSO data double enzyme concentration](https://tsoleary.github.io/projects/ADH/scripts/adh_trial_061720.html)
-  - Double the number of flies to 160 to try to increase reaction velocities overall. 
+    - Double the number of flies to 160 to try to increase reaction velocities overall. 
 
 - [TSO fractionation](https://tsoleary.github.io/projects/ADH/scripts/adh_tso_frac.html)
-  - 240 flies homogenized in 3 mL followed by ammonium sulfate fractionation and reconstition of pellet in 1 mL.
-    - ADH-fast & ADH-slow were reconsituted in 1 mL and then desalted
-    - VT-8, VT-10, & Chiapas were reconsituted in ~ 260 uL, desalted, then brought to 1 mL
+    - 240 flies homogenized in 3 mL followed by ammonium sulfate fractionation and reconstition of pellet in 1 mL.
+      - All flies were were reconsituted in 1 mL and then desalted, except for...
+      - VT-8, VT-10, & Chiapas were reconsituted in ~ 260 uL, desalted, then brought to 1 mL (for only the 23.5°C plates)
+        - I will redo these later.
+      - 28.5°C plates were only ~ 25°C at the time of the reaction. Need to increase equilibration time.
