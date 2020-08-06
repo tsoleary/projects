@@ -29,3 +29,6 @@ output:
       - VT-8, VT-10, & Chiapas were reconsituted in ~ 260 uL, desalted, then brought to 1 mL (for only the 23.5°C plates)
         - I will redo these later.
       - 28.5°C plates were only ~ 25°C at the time of the reaction. Need to increase equilibration time.
+      
+- [TSO fractionation](https://tsoleary.github.io/projects/ADH/scripts/adh_tso_frac_temp_check.html)
+    - Increased temperatures with thermocouple check
