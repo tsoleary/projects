@@ -20,12 +20,8 @@ read_tidy_spec_csv <- function(file) {
                  names_to = "conc_well", 
                  values_to = "abs") %>%
     mutate(conc = as.numeric(str_replace_all(conc_well, "_.", ""))) %>%
-    mutate(file = file,
-           temp_group = case_when(temp > 17.5 & temp < 19.5 ~ "18.5",
-                                  temp > 22.5 & temp < 24.5 ~ "23.5",
-                                  temp > 27.5 & temp < 29.5 ~ "28.5",
-                                  temp > 32.5 & temp < 34.5 ~ "33.5",
-                                  temp > 37.5 & temp < 39.5 ~ "38.5"))
+    mutate(file = str_remove(file, ".csv")) %>%
+    separate(file, into = c("enzyme", "temp_group", "date"), sep = "_")
   
 } 
 # End function -----------------------------------------------------------------
@@ -66,7 +62,7 @@ require(broom)
 
 calc_velocity <- function(data) {
   data %>%
-    group_by(conc_well, temp_group) %>%
+    group_by(enzyme, conc_well, temp_group) %>%
     nest() %>%
     mutate(
       fit = map(data, ~ lm(abs ~ time, data = .x)),
@@ -76,7 +72,7 @@ calc_velocity <- function(data) {
     unnest(tidied) %>%
     unnest(glanced, .name_repair = "minimal") %>%
     filter(term == "time") %>%
-    select(temp_group, conc_well, estimate, r.squared) %>%
+    select(enzyme, temp_group, conc_well, estimate, r.squared) %>%
     rename(velocity = estimate) %>%
     mutate(conc = as.numeric(str_replace_all(conc_well, "_.", ""))) %>%
     filter(conc != 0) %>%
