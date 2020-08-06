@@ -95,7 +95,7 @@ require(broom)
 calc_Km_Vm <- function(data) {
   data %>%
     filter(conc != 0 & velocity > 0) %>%
-    group_by(temp_group) %>%
+    group_by(enzyme, temp_group) %>%
     nest() %>%
     mutate(
       fit = map(data, ~ nls(formula = 
