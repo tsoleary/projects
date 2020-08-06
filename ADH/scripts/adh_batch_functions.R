@@ -123,7 +123,9 @@ plot_velo <- function(data) {
                    color = as.factor(conc_well))) +
     geom_smooth(method = "lm", se = FALSE) +
     facet_wrap(~ temp_group) +
-    labs(x = "Time (s)", y = "Absorbance @ 340 nm") +
+    labs(x = "Time (s)", 
+         y = "Absorbance @ 340 nm", 
+         title = str_to_title(unique(data$enzyme))) +
     scale_color_discrete(name = "Ethanol (mM)") +
     geom_point() +
     theme_classic(base_size = 16)
