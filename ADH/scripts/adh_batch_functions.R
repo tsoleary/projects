@@ -243,3 +243,144 @@ Rsq <- function(model) {
 }
 # End function -----------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
+# Function: read_tidy_nadh_csv
+# Description: Reads a .csv with the nadh std curve values and tidys the data
+# Inputs: file -- .csv file location
+# Outputs: tidy tibble with NADH, mins, and abs columns 
+
+require(tidyverse)
+
+read_tidy_nadh_csv <- function(file) {
+  df <- read_csv(file)
+  
+  tidy_df <- df %>%
+    pivot_longer(cols = contains("min"), names_to = "mins", values_to = "abs") %>%
+    mutate(mins = as.numeric(str_remove_all(mins, "_min"))) 
+  
+  return(tidy_df)
+  
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: read_tidy_adh_abs_csv
+# Description: Reads and tidys ADH absorbance data
+# Inputs: file -- .csv location
+# Outputs: tidy tibble with EtOH mM, sample_vol, n_flies, genotype, mins and abs
+#            columns
+
+require(tidyverse)
+
+read_tidy_adh_abs_csv <- function(file) {
+  df <- read_csv(file)
+  
+  df <- df %>%
+    pivot_longer(cols = contains("min"), names_to = "mins", values_to = "abs") %>%
+    mutate(mins = as.numeric(str_remove_all(mins, "_min")))
+  
+  return(df)
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: plot_std_curve
+# Description: Plots the NADH std curve
+# Inputs: Tidy tibble with NADH and abs cols -- abs average or one time point
+# Outputs: plot with linear regression curve
+
+plot_std_curve <- function(dat) {
+  ggplot(data = dat, aes(x = NADH, y = abs)) +
+    geom_smooth(method='lm', formula = y ~ x, se = FALSE) +
+    geom_point() +
+    ggpmisc::stat_poly_eq(formula = y ~ x, 
+                          aes(label = paste(..eq.label.., ..rr.label.., 
+                                            sep = "*\", \"*")),
+                          parse = TRUE, 
+                          rr.digits = 5,
+                          label.x = 0.85, 
+                          label.y = "top") +
+    theme_classic() +
+    labs(y = "Absorbance @ 450 nm", x = "NADH (nmol)")
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: std_curve
+# Description: Get intercept and slope values of std curve for downstream calcs
+# Inputs: data.frame with NADH and abs columns
+# Outputs: output_description
+
+std_curve <- function(dat) {
+  int <- as.numeric(lm(abs ~ NADH, dat)$coefficients[1])
+  slope <- as.numeric(lm(abs ~ NADH, dat)$coefficients[2])
+  
+  return(c(int = int, slope = slope))
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: calc_adh_activity
+# Description: description
+# Inputs: input_description
+# Outputs: output_description
+
+calc_adh_activity <- function(dat, std_curve_lm, t_0 = 0) {
+  dat %>%
+    mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
+    mutate(deltaAbs = abs - abs[mins == t_0],
+           deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
+           deltaTime = mins - t_0) %>%
+    filter(deltaTime != 0) %>%
+    mutate(dilution_factor = 150/sample_vol) %>%
+    mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*dilution_factor) %>%
+    ungroup(EtOH) %>%
+    mutate(mU_mL = mU_mL - mU_mL[EtOH == 0])
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: plot_sample_abs_time
+# Description: description
+# Inputs: input_description
+# Outputs: output_description
+
+plot_sample_abs_time <- function(dat) {
+  ggplot(data = dat, 
+         aes(x = mins, y = abs, 
+             color = EtOH)) +
+    geom_smooth(method='lm', formula = y ~ x, se = FALSE) +
+    geom_point() +
+    theme_classic() +
+    labs(y = "Absorbance @ 450 nm", x = "Time (mins)") 
+} 
+# End function -----------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Function: plot_mm_curve_biovision
+# Description: Plot the Michaelis-Menten curves
+# Inputs: tibble with conc and velocity columns
+# Outputs: plot
+
+require(tidyverse)
+
+plot_mm_curve_biovision <- function(data) {
+  
+  ggplot(data, aes(x = as.numeric(as.character(EtOH)), y = mU_mL)) +
+    geom_point(pch = 21, size = 3, color = "grey50", alpha = 0.75) +
+    geom_smooth(method = "nls", 
+                formula = y ~ SSmicmen(x, Vmax, Km),
+                data = data,
+                se = FALSE,
+                show.legend = FALSE) +
+    labs(x = "Ethanol (mM)",
+         y = expression("ADH activity (mU/mL)")) + 
+    theme_classic()
+} 
+# End function -----------------------------------------------------------------
