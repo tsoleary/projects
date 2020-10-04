@@ -7,66 +7,37 @@
 # Load packages
 require(tidyverse)
 
-# Load data
-nadh <- read_csv(here::here("ADH/data/biovision/NADH_std_09212020.csv"))
-#nadh <- read_csv(here::here("ADH/data/biovision/NADH_std_09282020.csv"))
+# Source functions
+source(here::here("ADH/scripts/adh_batch_functions.R"))
 
+# Load and tidy data
+setwd(here::here("ADH/data/biovision"))
+nadh <- read_tidy_nadh_csv("NADH_std_10012020.csv")
+abs <- read_tidy_adh_abs_csv("adh_abs_10012020.csv")
 
-abs <- read_csv(here::here("ADH/data/biovision/adh_abs_09212020.csv"))
-abs <- read_csv(here::here("ADH/data/biovision/adh_abs_09282020.csv"))
-
-# Tidy NADH data
+# Get the means of the NADH data
 x <- nadh %>%
-  pivot_longer(cols = -NADH, names_to = "mins", values_to = "abs") %>%
-  mutate(mins = as.numeric(str_remove_all(mins, "_min"))) %>%
   group_by(NADH) %>%
   summarize(abs = median(abs))
 
-# Plot the standard curve ---
-ggplot(data = x, aes(x = NADH, y = abs)) +
-  geom_smooth(method='lm', formula = y ~ x, se = FALSE) +
-  geom_point() +
-  ggpmisc::stat_poly_eq(formula = y ~ x, 
-                        aes(label = paste(..eq.label.., ..rr.label.., 
-                                          sep = "*\", \"*")),
-                        parse = TRUE, 
-                        rr.digits = 5,
-                        label.x = 0.85, 
-                        label.y = "top") +
-  theme_classic() +
-  labs(y = "Absorbance @ 450 nm", x = "NADH (nmol)")
+# Plot the standard curve 
+plot_std_curve(x)
 
+# Get the slopes and intercepts of the standard curve
+std_curve_lm <- std_curve(x)
 
-# Tidy ADH abs data
+# Get specific ADH data.
 y <- abs %>%
-  pivot_longer(cols = contains("min"), names_to = "mins", values_to = "abs") %>%
-  mutate(mins = as.numeric(str_remove_all(mins, "_min")),
-         EtOH = as.factor(EtOH)) %>%
-  group_by(EtOH, sample_vol, n_flies, genotype, mins) %>%
+  mutate(EtOH = as.factor(EtOH)) %>%
+  group_by(EtOH, temp, sample_vol, n_flies, genotype, mins) %>%
   summarize(abs = median(abs)) %>%
-  filter(n_flies == 5) %>%
-  filter(mins != 0) %>%
-  filter(sample_vol == 5)
-
-y1 <- y %>%
-  mutate(nmol_NADH = (abs - 0.123) / 0.0683) %>%
-  mutate(deltaAbs = abs - abs[mins == 10],
-         deltaNADH = nmol_NADH - nmol_NADH[mins == 10],
-         deltaTime = mins - 10) %>%
-  filter(deltaTime != 0) %>%
-  mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*9)
-  
-  
-  pivot_wider(names_from = mins, values_from = abs)
-  summarize()
+  filter(mins %in% c(0, 60))
 
 # Plot the absorbance over time
-ggplot(data = y, 
-       aes(x = mins, y = abs, 
-                     color = EtOH)) +
-  geom_smooth(method='lm', formula = y ~ x, se = FALSE) +
-  geom_point() +
-  theme_classic() +
-  labs(y = "Absorbance @ 450 nm", x = "Time (mins)") 
+plot_sample_abs_time(y)
 
+# Calculate ADH activity
+t <- calc_adh_activity(y, std_curve_lm, t_0 = 0)
 
+# Plot the MM Curve
+plot_mm_curve(t)
