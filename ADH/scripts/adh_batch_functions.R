@@ -384,3 +384,30 @@ plot_mm_curve_biovision <- function(data) {
     theme_classic()
 } 
 # End function -----------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# Function: calc_Km_Vm_biovision
+# Description: Calculate Vmax and Km for Michaelis–Menten curve
+# Inputs: tibble with velocity estimates for each conc and temp_group
+# Outputs: tibble with estimates for Vmax and Km
+
+require(tidyverse)
+require(broom)
+
+calc_Km_Vm_biovision <- function(data) {
+  data %>%
+    mutate(EtOH = as.numeric(as.character(EtOH))) %>%
+    filter(EtOH != 0) %>%
+    group_by(genotype, temp) %>%
+    nest() %>%
+    mutate(
+      fit = map(data, ~ nls(formula = 
+                              mU_mL ~ SSmicmen(EtOH, Vmax, Km), data = .), 
+                data = .x),
+      tidied = map(fit, tidy)
+    ) %>%
+    unnest(tidied) %>%
+    mutate(r.squared = map(fit, Rsq)) %>%
+    unnest(r.squared)
+} 
+# End function -----------------------------------------------------------------
