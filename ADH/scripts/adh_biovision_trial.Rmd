@@ -74,13 +74,22 @@ t <- calc_adh_activity(abs_0_f, std_curve_lm, t_0 = 0)
 
 # Fit Michaelis–Menten curves
 
-## ADH-slow enzyme
+## ADH-fast enzyme
 
 ```{r}
 # Plot the MM Curve
 plot_mm_curve_biovision(t %>%
                           filter(EtOH != 0))
+
 ```
+
+```{r}
+# Plot the MM Curve
+plot_mm_curve_lb(t)
+```
+
+
+
 ```{r}
 calc_Km_Vm_biovision(t)  %>%
   select(genotype, temp, term, estimate, std.error, r.squared) %>%

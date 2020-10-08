@@ -373,7 +373,7 @@ require(tidyverse)
 plot_mm_curve_biovision <- function(data) {
   
   ggplot(data, aes(x = as.numeric(as.character(EtOH)), y = mU_mL)) +
-    geom_point(pch = 21, size = 3, color = "grey50", alpha = 0.75) +
+    geom_point(pch = 21, size = 3, color = "grey50", alpha = 1) +
     geom_smooth(method = "nls", 
                 formula = y ~ SSmicmen(x, Vmax, Km),
                 data = data,
@@ -384,6 +384,36 @@ plot_mm_curve_biovision <- function(data) {
     theme_classic()
 } 
 # End function -----------------------------------------------------------------
+
+
+
+
+# ------------------------------------------------------------------------------
+# Function: plot_mm_curve_biovision
+# Description: Plot the Lineweaver-Burke
+# Inputs: tibble with conc and velocity columns
+# Outputs: plot
+
+require(tidyverse)
+
+plot_mm_curve_lb <- function(data) {
+  
+  ggplot(data, aes(x = 1/as.numeric(as.character(EtOH)), y = 1/mU_mL)) +
+    geom_point(pch = 21, size = 3, color = "grey50", alpha = 1) +
+    geom_smooth(method = "lm", 
+                formula = y ~ x,
+                data = data,
+                se = FALSE,
+                show.legend = FALSE) +
+    labs(x = "1/[Ethanol (mM)]",
+         y = expression("1/(ADH activity (mU/mL))")) + 
+    theme_classic()
+} 
+# End function -----------------------------------------------------------------
+
+
+
+
 
 # ------------------------------------------------------------------------------
 # Function: calc_Km_Vm_biovision
