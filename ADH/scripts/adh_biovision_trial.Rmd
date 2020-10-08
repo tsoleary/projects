@@ -79,19 +79,21 @@ t <- calc_adh_activity(abs_0_f, std_curve_lm, t_0 = 0)
 ```{r}
 # Plot the MM Curve
 plot_mm_curve_biovision(t %>%
-                          filter(EtOH != 0))
+                          filter(EtOH != 0 & EtOH != 6.25))
 
 ```
 
 ```{r}
 # Plot the MM Curve
-plot_mm_curve_lb(t)
+plot_mm_curve_lb(t %>%
+                   filter(EtOH != 6.25))
 ```
 
 
 
 ```{r}
-calc_Km_Vm_biovision(t)  %>%
+calc_Km_Vm_biovision(t %>%
+                          filter(EtOH != 0 & EtOH != 6.25))  %>%
   select(genotype, temp, term, estimate, std.error, r.squared) %>%
   pivot_wider(names_from = term, 
               values_from = c(estimate, std.error)) %>%
