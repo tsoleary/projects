@@ -6,6 +6,8 @@ output:
     theme: lumen
     toc: true
     toc_float: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include = FALSE}
@@ -22,8 +24,6 @@ require(kableExtra)
 source(here::here("ADH/scripts/adh_batch_functions.R"))
 ```
 
-# ADH Activity
-
 ```{r}
 # Read in data -----------------------------------------------------------------
 # Load and tidy data
@@ -33,26 +33,40 @@ abs <- read_tidy_adh_abs_csv("adh_abs_11122020.csv") %>%
   mutate(hs_time = as.character(hs_time))
 ```
 
-## Standard Curve
+# Standard Curve
 
-```{r, eval = FALSE}
-# Plot the standard curve 
-plot_std_curve(nadh)
-```
+## First Measurement
 
 ```{r}
-# Get the means of the NADH data
-nadh_med <- nadh %>%
-  group_by(NADH) %>%
-  summarize(abs = median(abs))
-
 # Plot the standard curve 
-plot_std_curve(nadh_med)
-
-# Get the slopes and intercepts of the standard curve
-std_curve_lm <- std_curve(nadh_med)
+plot_std_curve(nadh %>% filter(mins == 0))
 ```
 
+## All measurements
+```{r}
+  ggplot(data = nadh %>% mutate(mins = as.factor(mins)), 
+         aes(x = NADH, y = abs, color = mins)) +
+    geom_smooth(method='lm', formula = y ~ x, se = FALSE) +
+    geom_point() +
+    ggpmisc::stat_poly_eq(formula = y ~ x, 
+                          aes(label = paste(..eq.label.., ..rr.label.., 
+                                            sep = "*\", \"*")),
+                          parse = TRUE, 
+                          rr.digits = 5,
+                          label.x = 0.65, 
+                          label.y = "top") +
+    theme_classic() +
+    labs(y = "Absorbance @ 450 nm", x = "NADH (nmol)")
+```
+
+
+
+```{r}
+# Get the slopes and intercepts of the standard curve
+std_curve_lm <- std_curve(nadh %>% filter(mins == 0))
+```
+
+# Absorbance over time
 
 ```{r}
 # Get specific ADH data.
@@ -72,11 +86,95 @@ abs_0_f <- abs %>%
     facet_wrap(~ genotype)
 ```
 
+# Thermal Stability Curve
+
+## All measurements ADH activity
 
 ```{r}
 t_0 <- 0
 abs_0_f %>%
   group_by(genotype, buffer, hs_time) %>%
+  filter(mins %in% c(0, 60)) %>%
+  mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
+  mutate(deltaAbs = abs - abs[mins == t_0],
+         deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
+         deltaTime = mins - t_0) %>%
+  filter(deltaTime != 0) %>%
+  mutate(dilution_factor = 150/sample_vol) %>%
+        mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*dilution_factor) %>%
+  mutate(hs_time = as.numeric(hs_time)) %>%
+  group_by(genotype, buffer, hs_time) %>%
+  summarize(mU_mL = mean(mU_mL)) %>%
+  mutate(per_act = mU_mL/mU_mL[hs_time == 0] * 100) %>%
+  ggplot(aes(x = hs_time, y = per_act, color = genotype, shape = buffer)) +
+  geom_point() +
+  ylab("Percent Activity (%)") + 
+  xlab("Heat Shock Time (mins)") +
+  geom_line() + 
+  theme_classic() 
+```
+
+## 0 - 60 mins ADH activity
+
+```{r}
+t_0 <- 0
+abs_0_f %>%
+  group_by(genotype, buffer, hs_time) %>%
+  filter(mins %in% c(0, 60)) %>%
+  mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
+  mutate(deltaAbs = abs - abs[mins == t_0],
+         deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
+         deltaTime = mins - t_0) %>%
+  filter(deltaTime != 0) %>%
+  mutate(dilution_factor = 150/sample_vol) %>%
+        mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*dilution_factor) %>%
+  mutate(hs_time = as.numeric(hs_time)) %>%
+  group_by(genotype, buffer, hs_time) %>%
+  summarize(mU_mL = mean(mU_mL)) %>%
+  mutate(per_act = mU_mL/mU_mL[hs_time == 0] * 100) %>%
+  ggplot(aes(x = hs_time, y = per_act, color = genotype, shape = buffer)) +
+  geom_point() +
+  ylab("Percent Activity (%)") + 
+  xlab("Heat Shock Time (mins)") +
+  geom_line() + 
+  theme_classic() 
+```
+
+
+## 0 - 15 mins ADH activity
+
+```{r}
+t_0 <- 0
+abs_0_f %>%
+  group_by(genotype, buffer, hs_time) %>%
+  filter(mins %in% c(0, 15)) %>%
+  mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
+  mutate(deltaAbs = abs - abs[mins == t_0],
+         deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
+         deltaTime = mins - t_0) %>%
+  filter(deltaTime != 0) %>%
+  mutate(dilution_factor = 150/sample_vol) %>%
+        mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*dilution_factor) %>%
+  mutate(hs_time = as.numeric(hs_time)) %>%
+  group_by(genotype, buffer, hs_time) %>%
+  summarize(mU_mL = mean(mU_mL)) %>%
+  mutate(per_act = mU_mL/mU_mL[hs_time == 0] * 100) %>%
+  ggplot(aes(x = hs_time, y = per_act, color = genotype, shape = buffer)) +
+  geom_point() +
+  ylab("Percent Activity (%)") + 
+  xlab("Heat Shock Time (mins)") +
+  geom_line() + 
+  theme_classic() 
+```
+
+
+## 15 - 30 mins ADH activity
+
+```{r}
+t_0 <- 15
+abs_0_f %>%
+  group_by(genotype, buffer, hs_time) %>%
+  filter(mins %in% c(15, 30)) %>%
   mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
   mutate(deltaAbs = abs - abs[mins == t_0],
          deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
