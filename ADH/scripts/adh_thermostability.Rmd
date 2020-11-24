@@ -24,6 +24,8 @@ require(kableExtra)
 source(here::here("ADH/scripts/adh_batch_functions.R"))
 ```
 
+# 39°C Heat Shock
+
 ```{r}
 # Read in data -----------------------------------------------------------------
 # Load and tidy data
@@ -33,7 +35,7 @@ abs <- read_tidy_adh_abs_csv("adh_abs_11192020.csv") %>%
   mutate(hs_time = as.character(hs_time))
 ```
 
-# Standard Curve
+## Standard Curve
 
 ```{r}
 # Get the means of the NADH data
@@ -48,7 +50,7 @@ plot_std_curve(nadh_med)
 std_curve_lm <- std_curve(nadh_med)
 ```
 
-# Absorbance over time
+## Absorbance over time
 
 ```{r}
 # Get specific ADH data.
@@ -69,7 +71,7 @@ abs_0_f <- abs %>%
     facet_wrap(~ genotype)
 ```
 
-# Thermal Stability Curve
+## Thermal Stability Curve
 
 ```{r}
 t_0 <- 0
@@ -95,3 +97,78 @@ abs_0_f %>%
   geom_line() + 
   theme_classic() 
 ```
+
+# 35°C Heat Shock
+
+```{r}
+# Read in data -----------------------------------------------------------------
+# Load and tidy data
+setwd(here::here("ADH/data/biovision"))
+nadh <- read_tidy_nadh_csv("NADH_std_11232020.csv")
+abs <- read_tidy_adh_abs_csv("adh_abs_11232020.csv") %>%
+  mutate(hs_time = as.character(hs_time))
+```
+
+## Standard Curve
+
+```{r}
+# Get the means of the NADH data
+nadh_med <- nadh %>%
+  group_by(NADH) %>%
+  summarize(abs = median(abs))
+
+# Plot the standard curve 
+plot_std_curve(nadh_med)
+
+# Get the slopes and intercepts of the standard curve
+std_curve_lm <- std_curve(nadh_med)
+```
+
+## Absorbance over time
+
+```{r}
+# Get specific ADH data.
+abs_0_f <- abs %>%
+  mutate(EtOH = as.factor(EtOH)) %>%
+  group_by(genotype, mins, sample_vol, hs_time, rep) %>%
+  mutate(rep = as.factor(rep)) %>%
+  summarize(abs = median(abs))
+
+# Plot the absorbance over time
+  ggplot(data = abs_0_f, 
+         aes(x = mins, y = abs, 
+             color = hs_time, shape = rep)) +
+    geom_smooth(method = 'lm', formula = y ~ x, se = FALSE) +
+    geom_point() +
+    theme_classic() +
+    labs(y = "Absorbance @ 450 nm", x = "Time (mins)") + 
+    facet_wrap(~ genotype)
+```
+
+## Thermal Stability Curve
+
+```{r}
+t_0 <- 0
+abs_0_f %>%
+  group_by(genotype, rep, hs_time) %>%
+  filter(mins %in% c(0, 180)) %>%
+  mutate(nmol_NADH = (abs - std_curve_lm["int"]) / std_curve_lm["slope"]) %>%
+  mutate(deltaAbs = abs - abs[mins == t_0],
+         deltaNADH = nmol_NADH - nmol_NADH[mins == t_0],
+         deltaTime = mins - t_0) %>%
+  filter(deltaTime != 0) %>%
+  mutate(dilution_factor = 150/sample_vol) %>%
+        mutate(mU_mL = (deltaNADH/(deltaTime*(sample_vol/1000)))*dilution_factor) %>%
+  mutate(hs_time = as.numeric(hs_time)) %>%
+  group_by(genotype, rep, hs_time) %>%
+  summarize(sd = sd(mU_mL), 
+            mU_mL = mean(mU_mL)) %>%
+  mutate(per_act = mU_mL/mU_mL[hs_time == 0] * 100) %>%
+  ggplot(aes(x = hs_time, y = per_act, color = genotype, shape = rep)) +
+  geom_point() +
+  ylab("Remaining Activity (%)") + 
+  xlab("Time incubated at 35°C (minutes)") +
+  geom_line() + 
+  theme_classic() 
+```
+
