@@ -12,11 +12,12 @@ pacman::p_load(shiny,
 
 # Load data
 ddslrtreg <- readRDS("ddslrtreg.rds")
-region_res <- read_csv("tropvtempREGION.csv") %>%
-  filter(!is.na(padj))
+region_res <- read_csv("tropvtempREGION.csv") # %>%
+#   filter(!is.na(padj))
 genes_df <- read_csv("emily_transcript_genes.csv") %>%
   filter(transcript_id %in% region_res$transcript_id)
 res <- full_join(region_res, genes_df)
+lt_df <- read_delim("lockwood_2018_LT50_data.txt", delim = "\t")
 
 # Define UI for app that draws boxplots ----------------------------------------
 ui <- fluidPage(
@@ -55,13 +56,16 @@ ui <- fluidPage(
               
               # Output: Tabset w/ plot and table ----
               tabsetPanel(type = "tabs",
-                          tabPanel("Plot", 
+                          tabPanel("Box Plot", 
                                    h2(htmlOutput(outputId = "plot_title")), 
-                                   plotOutput(outputId = "distPlot")),
-                          tabPanel("Table", 
+                                   plotOutput(outputId = "boxPlot")),
+                          tabPanel("Expression vs. LT50",
+                                   h2(htmlOutput(outputId = "plot_title_lt")),
+                                   plotOutput(outputId = "boxPlotLT50")),
+                          tabPanel("DESeq Region Results", 
                                    h2(htmlOutput(outputId = "table_title")),
                                    tableOutput(outputId = "table")),
-                          tabPanel("DE Transcript list",
+                          tabPanel("All DE Transcripts",
                                    h2("All differentially expressed transcripts between regions"),
                                    tableOutput(outputId = "table_sig")))
               
@@ -80,6 +84,11 @@ server <- function(input, output) {
   # Create reactive title for table
   output$table_title <- reactive({
     paste0("DESeq2 results for <i>", input$gene, "</i>", " expression between regions")
+  })
+  
+  # Create reactive title for lt50 expression
+  output$plot_title_lt <- reactive({
+    paste0("<i>", input$gene, "</i>", " expression vs embryonic LT50")
   })
   
   # Filter data for selected gene and/if significance ----
@@ -105,7 +114,9 @@ server <- function(input, output) {
   })
   
   
-  # Define the plot height dynamically based on the number transcripts ----
+  # Define the plot height dynamically based on the number transcripts ---------
+  
+  # For Box plot
   plot_height <- reactive({
     y <- data()
     
@@ -113,8 +124,16 @@ server <- function(input, output) {
   }
   )
   
+  # For LT50 exp data
+  plot_height_lt <- reactive({
+    y <- data()
+    
+    nrow(y)*600
+  }
+  )
+  
   # Create the box plots based on selected inputs ----
-  output$distPlot <- renderPlot({
+  output$boxPlotLT50 <- renderPlot({
     
     y <- data()
     
@@ -124,8 +143,50 @@ server <- function(input, output) {
       
       d <- plotCounts(ddslrtreg, 
                       gene = y$transcript_id[i], 
-                      intgroup = c(input$factor,"temp"), 
-                      returnData = TRUE)
+                      intgroup = c("pop", "temp"), 
+                      returnData = TRUE) %>%
+        left_join(lt_df, by = c("pop" = "Pop"))
+      
+      p <- ggplot(d, aes(x = Embryo_LT50, 
+                         y = count)) +
+        geom_smooth(aes(color = temp), 
+                    method = "lm", 
+                    se = TRUE) +
+        geom_boxplot(aes(fill = pop), 
+                     color = "grey50", 
+                     alpha = 0.8) +
+        scale_fill_manual(name = "Population",
+                          values = c("coral", "coral1", 
+                                     "coral2", "coral3", "coral4",
+                                     "deepskyblue", "deepskyblue1", 
+                                     "deepskyblue2", "deepskyblue3", 
+                                     "deepskyblue4")) +
+        labs(y = "Normalized\ntranscript abundance", 
+             x = paste(expression("LT[50]"), "(°C)"),
+             title = y$transcript_id[i]) +
+        theme_classic(base_size = 14) +
+        facet_wrap(~ temp) 
+      
+      plots[[i]] <- p
+    }
+    
+    cowplot::plot_grid(plotlist = plots, nrow = length(plots))
+    
+  }, width = 800, height = plot_height_lt)
+  
+  # Create the box plots of expression vs LT50 for each temperature ----
+  output$boxPlot <- renderPlot({
+    
+    y <- data()
+    
+    plots <- vector(mode = "list", length = nrow(y))
+    
+    for (i in 1:nrow(y)){
+      
+      d <- plotCounts(ddslrtreg, 
+                      gene = y$transcript_id[i], 
+                      intgroup = c(input$factor, "temp"), 
+                      returnData = TRUE) 
       
       p <- ggplot(d, aes(x = temp, 
                          y = count, 
